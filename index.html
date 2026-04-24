@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TARGET ACE v1.1.0</title>
+  <style>
+    :root {
+  --bg0: #000000;
+  --bg1: #000000;
+  --bg2: #000000;
+  --line: rgba(255, 255, 255, 0.14);
+  --glow: rgba(255, 255, 255, 0.10);
+  --text: #f5f5f5;
+  --muted: #b5b5b5;
+  --accent: #ffffff;
+  --accent2: #d8d8d8;
+  --good: #00d26a;
+  --bad: #ff4a5f;
+  --warn: #ffbe4d;
+  --panel: rgba(8, 8, 8, 0.96);
+}
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+  margin: 0;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  color: var(--text);
+  background: #000;
+  overflow-x: hidden;
+}
+
+    .app-shell {
+  width: min(1440px, calc(100vw - 24px));
+  margin: 12px auto 90px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(8,8,8,0.98), rgba(0,0,0,0.98));
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset, 0 0 22px rgba(255,255,255,0.06);
+  backdrop-filter: blur(6px);
+}
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+      padding: 8px 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .brand-left { display:flex; align-items:center; gap:14px; min-width:0; }
+    .logo-wrap {
+  width: 92px;
+  height: 92px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: #000;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+    .logo-image { width: 100%; height: 100%; object-fit: contain; display:block; }
+    .brand-copy h1 { margin:0; font-size: clamp(24px, 3vw, 34px); letter-spacing: 1px; }
+    .brand-copy p { margin:4px 0 0; color: var(--muted); font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+
+    .header-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+
+    .main-grid {
+      display:grid;
+      grid-template-columns: auto minmax(360px, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .video-panel {
+      position: sticky;
+      top: 12px;
+      align-self: start;
+      width: fit-content;
+      max-width: 50vw;
+    }
+
+    .settings-panel {
+      max-height: calc(100vh - 140px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 18px;
+      padding: 12px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset;
+    }
+
+    .panel h2, .panel h3 { margin: 0 0 10px; font-size: 16px; }
+    .subtle { color: var(--muted); font-size: 12px; }
+
+    .video-stage {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #000;
+      border: 1px solid rgba(255,255,255,0.10);
+      min-height: 300px;
+      min-width: 240px;
+      max-width: 50vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-inner {
+      position: relative;
+      background: #000;
+      transform-origin: center center;
+      flex: 0 0 auto;
+    }
+    video, canvas.overlay, canvas.processing {
+      display:block;
+      width: 100%;
+      height: 100%;
+    }
+    video { background:#000; object-fit: contain; }
+    canvas.overlay {
+      position:absolute; left:0; top:0; pointer-events:none;
+    }
+    canvas.processing { display:none; }
+    .video-toolbar {
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; margin-top: 10px;
+    }
+    .video-stats {
+      display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;
+    }
+    .stat-pill {
+      border-radius: 999px; padding: 8px 12px; font-size: 13px;
+      border:1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03);
+    }
+
+    .targets-tabs {
+      display:flex; gap:8px; flex-wrap:wrap; max-height: 130px; overflow:auto; padding-bottom:6px; margin-bottom: 12px;
+    }
+    .tab-btn {
+      border:1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.035);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      min-width: 74px;
+    }
+    .tab-btn.active { background: rgba(255,255,255,0.12); box-shadow: 0 0 0 1px rgba(255,255,255,0.06) inset; }
+
+    .fields {
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+    }
+    .field, .toggle-box {
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.025);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .field.full { grid-column: 1 / -1; }
+    .field label, .toggle-box label { display:block; font-size:12px; color: var(--muted); margin-bottom:6px; }
+    .inline {
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    }
+    input[type="range"] { width: 100%; }
+    input[type="text"], input[type="number"], input[type="password"], select {
+      width: 100%;
+      background: rgba(8,15,25,0.9);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+    input[type="color"] {
+      width: 48px; height: 38px; padding: 0; border:none; background:transparent;
+    }
+    button {
+      background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 12px;
+      padding: 9px 12px;
+      cursor:pointer;
+      font-weight: 600;
+    }
+    button.secondary { background: rgba(255,255,255,0.045); }
+    button.danger { border-color: rgba(255,74,95,0.35); background: rgba(255,74,95,0.1); }
+    button.good { border-color: rgba(0,210,106,0.35); background: rgba(0,210,106,0.12); }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+
+    .confirmation-box {
+      display:flex; align-items:center; justify-content:center;
+      min-height: 88px; border-radius: 18px; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;
+      border:1px solid rgba(255,255,255,0.08);
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+      text-align: center; padding: 12px;
+    }
+    .confirmation-box.good {
+      background: linear-gradient(180deg, rgba(0,210,106,0.38), rgba(0,210,106,0.18));
+      box-shadow: 0 0 22px rgba(0,210,106,0.22) inset;
+    }
+    .confirmation-box.bad {
+      background: linear-gradient(180deg, rgba(255,74,95,0.35), rgba(255,74,95,0.16));
+      box-shadow: 0 0 22px rgba(255,74,95,0.22) inset;
+    }
+    .confirmation-box.neutral {
+      background: linear-gradient(180deg, rgba(255,190,77,0.2), rgba(255,190,77,0.08));
+      box-shadow: 0 0 18px rgba(255,190,77,0.12) inset;
+    }
+
+    .small-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; }
+    .status-list { display:grid; gap:8px; max-height: 180px; overflow:auto; }
+    .status-item {
+      padding: 8px 10px; border-radius: 12px; border:1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03);
+      display:flex; justify-content:space-between; gap:10px; align-items:center; font-size:13px;
+    }
+    .good-text { color: #82ffbe; }
+    .bad-text { color: #ff8d9a; }
+    .muted { color: var(--muted); }
+
+    .viewer-mode .app-shell { width:calc(100vw - 16px); max-width:none; margin-bottom:20px; }
+    .viewer-mode .config-only,
+    .viewer-mode .footer-floating,
+    .viewer-mode .header-actions .config-hide,
+    .viewer-mode .brand-copy p,
+    .viewer-mode .sidebar-panel,
+    .viewer-mode .video-stats,
+    .viewer-mode .video-toolbar .left-only { display:none !important; }
+    .viewer-mode .main-grid { grid-template-columns: 1fr; }
+
+    @media (max-width: 980px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .video-panel { position: static; width: auto; max-width: none; }
+      .video-stage { width: 100% !important; max-width: 100%; }
+      .settings-panel { max-height: none; overflow: visible; }
+      .fields, .small-grid { grid-template-columns: 1fr; }
+      .brand-row { flex-direction: column; align-items: stretch; }
+      .header-actions { justify-content: flex-start; }
+    }
+  
+.viewer-mode body, .viewer-mode {
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+}
+.viewer-mode #videoPanel {
+    margin: 0 auto;
+}
+
+
+/* main-page preview containment fix */
+#videoPanel{
+  overflow:hidden !important;
+}
+#videoStage{
+  max-width:100% !important;
+  overflow:hidden !important;
+}
+#videoViewport{
+  width:100% !important;
+  height:100% !important;
+  overflow:hidden !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+#liveVideo,
+#overlayCanvas{
+  max-width:100% !important;
+  max-height:100% !important;
+}
+
+
+
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="brand-row">
+      <div class="brand-left">
+        <div class="logo-wrap" aria-hidden="true">
+<svg style="width:100%; height:100%;" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#888888"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="22" cy="22" r="21.5" stroke="url(#accent)" stroke-width="1.5" fill="none"/>
+  <circle cx="22" cy="22" r="15.5" stroke="url(#accent)" stroke-width="1.5" fill="none"/>
+  <circle cx="22" cy="22" r="7.5" fill="#ffffff"/>
+
+  <path d="M16 34 L22 6 L28 34 M17 24 H27"
+        stroke="#ffffff"
+        stroke-width="2.2"
+        fill="none"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>
+</div>
+        <div class="brand-copy">
+          <h1>TARGET ACE</h1>
+          <p>Webcam based vision system quality inspection tool</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="startCameraBtn">Start Camera</button>
+        <button id="stopCameraBtn" class="secondary">Stop Camera</button>
+        <button id="openViewerBtn">Open Video in New Window</button>
+        <button id="saveConfigBtn" class="good config-hide">Save Config</button>
+        <label class="config-hide" style="display:inline-flex; align-items:center; gap:8px;">
+          <input id="loadConfigInput" type="file" accept="application/json" style="display:none;" />
+          <button id="loadConfigBtn" class="secondary" type="button">Load Config</button>
+        </label>
+        <button id="setPinBtn" class="secondary config-hide">Set / Change PIN</button>
+        <button id="lockConfigBtn" class="secondary config-hide">Lock Config</button>
+        <button id="unlockConfigBtn" class="secondary config-hide">Unlock Config</button>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="panel video-panel">
+        <h2>Live Video + Overlay</h2>
+        <div class="video-stage" id="videoStage">
+          <div class="video-inner" id="videoInner">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="overlay" class="overlay"></canvas>
+            <canvas id="processing" class="processing"></canvas>
+          </div>
+        </div>
+
+        <div class="video-toolbar">
+          <div class="left-only inline">
+            <button id="addTargetBtn">Add Target</button>
+            <button id="removeTargetBtn" class="danger">Remove Selected Target</button>
+            <button id="resetTargetBtn" class="secondary">Reset Selected Target</button>
+          </div>
+          <div class="inline">
+            <label class="subtle" for="zoomRange">Zoom</label>
+            <input id="zoomRange" type="range" min="1" max="4" step="0.05" value="1" style="width:220px;" />
+            <span id="zoomLabel" class="stat-pill">1.00x</span>
+          </div>
+        </div>
+
+        <div class="video-stats">
+          <div class="stat-pill" id="cameraStatus">Camera: not started</div>
+          <div class="stat-pill" id="overallStatus">Overall: waiting</div>
+          <div class="stat-pill" id="lockStatus">Config: unlocked</div>
+          <div class="stat-pill">Targets: <span id="targetCountLabel">1</span> / 100</div>
+        </div>
+
+        <div class="panel" style="margin-top:12px; padding:10px;">
+          <h3>Global Confirmation</h3>
+          <div id="globalConfirmation" class="confirmation-box neutral">WAITING FOR CAMERA</div>
+          <div class="subtle" style="margin-top:8px;">Green means every enabled target passes. Red means one or more enabled targets fail. Yellow means no active decision yet.</div>
+        </div>
+      </div>
+
+      <div class="panel sidebar-panel settings-panel">
+        <h2>Target Controls</h2>
+        <div class="inline" style="margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+          <button id="addTargetBtnSidebar">Add Target</button>
+          <button id="removeTargetBtnSidebar" class="danger">Remove Selected Target</button>
+        </div>
+        <div class="targets-tabs" id="targetTabs"></div>
+        <div class="fields">
+          <div class="field full">
+            <label for="targetName">Target Name</label>
+            <input id="targetName" type="text" value="Target 1" />
+          </div>
+          <div class="toggle-box">
+            <label class="inline"><input id="targetEnabled" type="checkbox" checked /> Enabled</label>
+            <div class="subtle">Disabled targets are ignored in the global result.</div>
+          </div>
+          <div class="toggle-box">
+            <label class="inline"><input id="showLabel" type="checkbox" checked /> Show Label</label>
+            <div class="subtle">Shows target name above the target box.</div>
+          </div>
+
+          <div class="field">
+            <label for="xRange">X Position</label>
+            <input id="xRange" type="range" min="0" max="639" step="1" value="120" />
+            <div class="inline"><span class="subtle">Pixels</span><span id="xValue">120</span></div>
+          </div>
+          <div class="field">
+            <label for="yRange">Y Position</label>
+            <input id="yRange" type="range" min="0" max="479" step="1" value="120" />
+            <div class="inline"><span class="subtle">Pixels</span><span id="yValue">120</span></div>
+          </div>
+
+          <div class="field">
+            <label for="wRange">Target Width</label>
+            <input id="wRange" type="range" min="1" max="320" step="1" value="40" />
+            <div class="inline"><span class="subtle">Pixels</span><span id="wValue">40</span></div>
+          </div>
+          <div class="field">
+            <label for="hRange">Target Height</label>
+            <input id="hRange" type="range" min="1" max="240" step="1" value="40" />
+            <div class="inline"><span class="subtle">Pixels</span><span id="hValue">40</span></div>
+          </div>
+          <div class="field">
+            <label for="rotationRange">Target Rotation</label>
+            <input id="rotationRange" type="range" min="0" max="360" step="1" value="0" />
+            <div class="inline"><span class="subtle">Degrees</span><span id="rotationValue">0°</span></div>
+          </div>
+          <div class="field">
+            <label for="shapeMode">Target Shape</label>
+            <select id="shapeMode">
+              <option value="rect">Rectangle</option>
+              <option value="ellipse">Circle / Ellipse</option>
+              <option value="cylinder">Cylinder Ring</option>
+            </select>
+          </div>
+          <div class="field" id="cylinderThicknessWrap" style="display:none;">
+            <label for="cylinderThicknessRange">Cylinder Border Thickness</label>
+            <input id="cylinderThicknessRange" type="range" min="1" max="120" step="1" value="10" />
+            <div class="inline"><span class="subtle">Pixels</span><span id="cylinderThicknessValue">10</span></div>
+          </div>
+
+          <div class="field full">
+            <label for="zoomNote">Target Result Logic</label>
+            <div class="subtle">Each target samples the average color inside its rectangle. Positive and negative checks can each be enabled, disabled, and given their own alarm behavior.</div>
+          </div>
+
+          <div class="field full">
+            <h3 style="margin-top:0;">Positive Match</h3>
+            <div class="small-grid">
+              <div class="toggle-box">
+                <label class="inline"><input id="positiveEnabled" type="checkbox" checked /> Positive check enabled</label>
+                <label class="inline"><input id="positiveAlarm" type="checkbox" /> Alarm if positive check fails</label>
+                <label class="inline"><input id="disableAlarmAfterPositiveConfirmed" type="checkbox" /> Disable alarm after positive confirmed</label>
+              </div>
+              <div class="field">
+                <label for="positiveColor">Expected positive color</label>
+                <div class="inline">
+                  <input id="positiveColor" type="color" value="#00ff00" />
+                  <button id="samplePositiveBtn" type="button" class="secondary">Sample Current Area</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="positiveTolerance">Positive tolerance</label>
+                <input id="positiveTolerance" type="range" min="0" max="441" step="1" value="70" />
+                <div class="inline"><span class="subtle">RGB distance</span><span id="positiveToleranceValue">70</span></div>
+              </div>
+              <div class="field">
+                <label>Last positive distance</label>
+                <div class="stat-pill" id="positiveDistanceLabel">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field full">
+            <h3 style="margin-top:0;">Negative Match</h3>
+            <div class="small-grid">
+              <div class="toggle-box">
+                <label class="inline"><input id="negativeEnabled" type="checkbox" /> Negative check enabled</label>
+                <label class="inline"><input id="negativeAlarm" type="checkbox" checked /> Alarm if negative is detected</label>
+                <label class="inline"><input id="enableAlarmAfterNegativeDetected" type="checkbox" /> Enable alarm after negative is detected</label>
+              </div>
+              <div class="field">
+                <label for="negativeColor">Expected negative color</label>
+                <div class="inline">
+                  <input id="negativeColor" type="color" value="#ff0000" />
+                  <button id="sampleNegativeBtn" type="button" class="secondary">Sample Current Area</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="negativeTolerance">Negative tolerance</label>
+                <input id="negativeTolerance" type="range" min="0" max="441" step="1" value="70" />
+                <div class="inline"><span class="subtle">RGB distance</span><span id="negativeToleranceValue">70</span></div>
+              </div>
+              <div class="field">
+                <label>Last negative distance</label>
+                <div class="stat-pill" id="negativeDistanceLabel">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field full">
+            <label>Selected Target Result</label>
+            <div id="selectedConfirmation" class="confirmation-box neutral">WAITING</div>
+          </div>
+
+          <div class="field full">
+            <label>All Target Status</label>
+            <div class="status-list" id="statusList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const isViewerMode = new URLSearchParams(location.search).get('viewer') === '1';
+      if (isViewerMode) document.body.classList.add('viewer-mode');
+
+      const MAX_TARGETS = 100;
+      const INSPECTION_FPS = 10;
+      const INSPECTION_INTERVAL_MS = Math.round(1000 / INSPECTION_FPS);
+      const STORAGE_KEY = 'target-ace-config-v1';
+      const LOCK_KEY = 'target-ace-lock-v1';
+
+      const video = document.getElementById('video');
+      const overlay = document.getElementById('overlay');
+      const processing = document.getElementById('processing');
+      const overlayCtx = overlay.getContext('2d');
+      const processingCtx = processing.getContext('2d', { willReadFrequently: true });
+      const videoPanel = document.querySelector('.video-panel');
+      const videoStage = document.getElementById('videoStage');
+      const videoInner = document.getElementById('videoInner');
+      const cameraStatus = document.getElementById('cameraStatus');
+      const overallStatus = document.getElementById('overallStatus');
+      const globalConfirmation = document.getElementById('globalConfirmation');
+      const selectedConfirmation = document.getElementById('selectedConfirmation');
+      const targetTabs = document.getElementById('targetTabs');
+      const statusList = document.getElementById('statusList');
+      const targetCountLabel = document.getElementById('targetCountLabel');
+      const zoomRange = document.getElementById('zoomRange');
+      const zoomLabel = document.getElementById('zoomLabel');
+      const lockStatus = document.getElementById('lockStatus');
+
+      const inputs = {
+        targetName: document.getElementById('targetName'),
+        targetEnabled: document.getElementById('targetEnabled'),
+        showLabel: document.getElementById('showLabel'),
+        xRange: document.getElementById('xRange'),
+        yRange: document.getElementById('yRange'),
+        wRange: document.getElementById('wRange'),
+        hRange: document.getElementById('hRange'),
+        rotationRange: document.getElementById('rotationRange'),
+        shapeMode: document.getElementById('shapeMode'),
+        cylinderThicknessRange: document.getElementById('cylinderThicknessRange'),
+        xValue: document.getElementById('xValue'),
+        yValue: document.getElementById('yValue'),
+        wValue: document.getElementById('wValue'),
+        hValue: document.getElementById('hValue'),
+        rotationValue: document.getElementById('rotationValue'),
+        cylinderThicknessValue: document.getElementById('cylinderThicknessValue'),
+        cylinderThicknessWrap: document.getElementById('cylinderThicknessWrap'),
+        positiveEnabled: document.getElementById('positiveEnabled'),
+        positiveAlarm: document.getElementById('positiveAlarm'),
+        disableAlarmAfterPositiveConfirmed: document.getElementById('disableAlarmAfterPositiveConfirmed'),
+        positiveColor: document.getElementById('positiveColor'),
+        positiveTolerance: document.getElementById('positiveTolerance'),
+        positiveToleranceValue: document.getElementById('positiveToleranceValue'),
+        positiveDistanceLabel: document.getElementById('positiveDistanceLabel'),
+        negativeEnabled: document.getElementById('negativeEnabled'),
+        negativeAlarm: document.getElementById('negativeAlarm'),
+        enableAlarmAfterNegativeDetected: document.getElementById('enableAlarmAfterNegativeDetected'),
+        negativeColor: document.getElementById('negativeColor'),
+        negativeTolerance: document.getElementById('negativeTolerance'),
+        negativeToleranceValue: document.getElementById('negativeToleranceValue'),
+        negativeDistanceLabel: document.getElementById('negativeDistanceLabel')
+      };
+
+      const buttons = {
+        startCameraBtn: document.getElementById('startCameraBtn'),
+        stopCameraBtn: document.getElementById('stopCameraBtn'),
+        addTargetBtn: document.getElementById('addTargetBtn'),
+        removeTargetBtn: document.getElementById('removeTargetBtn'),
+        addTargetBtnSidebar: document.getElementById('addTargetBtnSidebar'),
+        removeTargetBtnSidebar: document.getElementById('removeTargetBtnSidebar'),
+        resetTargetBtn: document.getElementById('resetTargetBtn'),
+        saveConfigBtn: document.getElementById('saveConfigBtn'),
+        loadConfigBtn: document.getElementById('loadConfigBtn'),
+        loadConfigInput: document.getElementById('loadConfigInput'),
+        samplePositiveBtn: document.getElementById('samplePositiveBtn'),
+        sampleNegativeBtn: document.getElementById('sampleNegativeBtn'),
+        openViewerBtn: document.getElementById('openViewerBtn'),
+        setPinBtn: document.getElementById('setPinBtn'),
+        lockConfigBtn: document.getElementById('lockConfigBtn'),
+        unlockConfigBtn: document.getElementById('unlockConfigBtn')
+      };
+
+      let stream = null;
+      let rafId = null;
+      let lastBeepAt = 0;
+      let audioCtx = null;
+      let configLocked = false;
+
+      const defaultTarget = (n = 1) => ({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        name: `Target ${n}`,
+        enabled: true,
+        showLabel: true,
+        x: 120,
+        y: 120,
+        w: 40,
+        h: 40,
+        rotation: 0,
+        shape: 'rect',
+        cylinderThickness: 10,
+        positiveEnabled: true,
+        positiveAlarm: false,
+        disableAlarmAfterPositiveConfirmed: false,
+        positiveDisableAchieved: false,
+        positiveAlarmArmed: true,
+        positiveColor: '#00ff00',
+        positiveTolerance: 70,
+        negativeEnabled: false,
+        negativeAlarm: true,
+        enableAlarmAfterNegativeDetected: false,
+        negativeEnableAchieved: false,
+        negativeColor: '#ff0000',
+        negativeTolerance: 70,
+        lastPositiveDistance: null,
+        lastNegativeDistance: null,
+        lastAvgColor: { r: 0, g: 0, b: 0 },
+        result: 'waiting',
+        reason: 'Waiting for camera'
+      });
+
+      let state = loadConfigFromStorage() || {
+        version: 2.2,
+        zoom: 1,
+        videoWidth: 640,
+        videoHeight: 480,
+        selectedTargetIndex: 0,
+        positiveAlarmSystemArmed: true,
+        targets: [defaultTarget(1)]
+      };
+
+      function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+      function hexToRgb(hex) {
+        const raw = hex.replace('#', '');
+        const full = raw.length === 3 ? raw.split('').map(c => c + c).join('') : raw;
+        const num = parseInt(full, 16);
+        return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+      }
+      function rgbToHex({r, g, b}) {
+        return '#' + [r, g, b].map(v => clamp(Math.round(v),0,255).toString(16).padStart(2,'0')).join('');
+      }
+      function distance(a, b) {
+        const dr = a.r - b.r, dg = a.g - b.g, db = a.b - b.b;
+        return Math.sqrt(dr * dr + dg * dg + db * db);
+      }
+
+      function saveConfigToStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          ...state,
+          targets: state.targets.map(t => ({ ...t }))
+        }));
+      }
+      function loadConfigFromStorage() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : null;
+        } catch (err) {
+          console.warn('Unable to load saved config', err);
+          return null;
+        }
+      }
+      function getLockRecord() {
+        try {
+          const raw = localStorage.getItem(LOCK_KEY);
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      }
+      function setLockRecord(record) { localStorage.setItem(LOCK_KEY, JSON.stringify(record)); }
+      function hashPin(pin) {
+        let hash = 2166136261;
+        for (let i = 0; i < pin.length; i++) {
+          hash ^= pin.charCodeAt(i);
+          hash = Math.imul(hash, 16777619);
+        }
+        return String(hash >>> 0);
+      }
+
+      function ensureBounds(target) {
+        const vw = state.videoWidth || 640;
+        const vh = state.videoHeight || 480;
+        target.w = clamp(Math.round(target.w), 1, vw);
+        target.h = clamp(Math.round(target.h), 1, vh);
+        target.x = clamp(Math.round(target.x), 0, Math.max(0, vw - target.w));
+        target.y = clamp(Math.round(target.y), 0, Math.max(0, vh - target.h));
+      }
+
+      function applyVideoDimensions(width, height) {
+        state.videoWidth = width || 640;
+        state.videoHeight = height || 480;
+        video.width = state.videoWidth;
+        video.height = state.videoHeight;
+        overlay.width = state.videoWidth;
+        overlay.height = state.videoHeight;
+        processing.width = state.videoWidth;
+        processing.height = state.videoHeight;
+        state.targets.forEach(ensureBounds);
+        updateInputLimits();
+        syncPanelHeights();
+      }
+
+      function updateInputLimits() {
+        const vw = state.videoWidth || 640;
+        const vh = state.videoHeight || 480;
+        inputs.xRange.max = Math.max(0, vw - 1);
+        inputs.yRange.max = Math.max(0, vh - 1);
+        inputs.wRange.max = vw;
+        inputs.hRange.max = vh;
+      }
+
+      function updateVideoFitLayout() {
+        const sourceWidth = state.videoWidth || 640;
+        const sourceHeight = state.videoHeight || 480;
+        const aspect = sourceWidth / sourceHeight;
+
+        const stageWidth = Math.max(1, Math.round(videoStage.clientWidth || parseFloat(getComputedStyle(videoStage).width) || sourceWidth));
+        const stageHeight = Math.max(1, Math.round(videoStage.clientHeight || parseFloat(getComputedStyle(videoStage).height) || Math.round(stageWidth / aspect)));
+
+        let innerWidth = stageWidth;
+        let innerHeight = Math.round(innerWidth / aspect);
+
+        if (innerHeight > stageHeight) {
+          innerHeight = stageHeight;
+          innerWidth = Math.round(innerHeight * aspect);
+        }
+
+        videoInner.style.width = `${innerWidth}px`;
+        videoInner.style.height = `${innerHeight}px`;
+      }
+
+      function getSelectedTarget() {
+        state.selectedTargetIndex = clamp(state.selectedTargetIndex, 0, state.targets.length - 1);
+        return state.targets[state.selectedTargetIndex];
+      }
+
+      function setConfigLocked(locked) {
+        configLocked = !!locked;
+        lockStatus.textContent = `Config: ${configLocked ? 'locked' : 'unlocked'}`;
+        const toDisable = document.querySelectorAll('.sidebar-panel input, .sidebar-panel button, .sidebar-panel select, .header-actions .config-hide');
+        toDisable.forEach(el => {
+          if (el.id === 'unlockConfigBtn') return;
+          if (el === buttons.loadConfigInput) return;
+          el.disabled = configLocked;
+        });
+        buttons.unlockConfigBtn.disabled = !configLocked;
+        buttons.lockConfigBtn.disabled = configLocked;
+      }
+
+      function renderTabs() {
+        targetTabs.innerHTML = '';
+        state.targets.forEach((target, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'tab-btn' + (idx === state.selectedTargetIndex ? ' active' : '');
+          btn.textContent = target.name || `Target ${idx + 1}`;
+          btn.addEventListener('click', () => {
+            state.selectedTargetIndex = idx;
+            render();
+          });
+          targetTabs.appendChild(btn);
+        });
+        targetCountLabel.textContent = String(state.targets.length);
+      }
+
+      function renderTargetFields() {
+        const t = getSelectedTarget();
+        if (!t) return;
+        ensureBounds(t);
+        inputs.targetName.value = t.name;
+        inputs.targetEnabled.checked = !!t.enabled;
+        inputs.showLabel.checked = !!t.showLabel;
+        inputs.xRange.value = t.x;
+        inputs.yRange.value = t.y;
+        inputs.wRange.value = t.w;
+        inputs.hRange.value = t.h;
+        inputs.rotationRange.value = Number(t.rotation || 0);
+        inputs.shapeMode.value = t.shape || 'rect';
+        inputs.cylinderThicknessRange.max = String(Math.max(1, Math.floor(Math.min(t.w, t.h) / 2)));
+        inputs.cylinderThicknessRange.value = String(Math.min(Number(t.cylinderThickness || 10), Math.max(1, Math.floor(Math.min(t.w, t.h) / 2))));
+        inputs.cylinderThicknessValue.textContent = String(Math.min(Number(t.cylinderThickness || 10), Math.max(1, Math.floor(Math.min(t.w, t.h) / 2))));
+        inputs.cylinderThicknessWrap.style.display = (t.shape === 'cylinder') ? '' : 'none';
+        inputs.xValue.textContent = String(t.x);
+        inputs.yValue.textContent = String(t.y);
+        inputs.wValue.textContent = String(t.w);
+        inputs.hValue.textContent = String(t.h);
+        inputs.rotationValue.textContent = `${Math.round(Number(t.rotation || 0))}°`;
+        inputs.positiveEnabled.checked = !!t.positiveEnabled;
+        inputs.positiveAlarm.checked = !!t.positiveAlarm;
+        inputs.disableAlarmAfterPositiveConfirmed.checked = !!t.disableAlarmAfterPositiveConfirmed;
+        inputs.positiveColor.value = t.positiveColor;
+        inputs.positiveTolerance.value = t.positiveTolerance;
+        inputs.positiveToleranceValue.textContent = String(t.positiveTolerance);
+        inputs.positiveDistanceLabel.textContent = t.lastPositiveDistance == null ? '—' : t.lastPositiveDistance.toFixed(1);
+        inputs.negativeEnabled.checked = !!t.negativeEnabled;
+        inputs.negativeAlarm.checked = !!t.negativeAlarm;
+        inputs.enableAlarmAfterNegativeDetected.checked = !!t.enableAlarmAfterNegativeDetected;
+        inputs.negativeColor.value = t.negativeColor;
+        inputs.negativeTolerance.value = t.negativeTolerance;
+        inputs.negativeToleranceValue.textContent = String(t.negativeTolerance);
+        inputs.negativeDistanceLabel.textContent = t.lastNegativeDistance == null ? '—' : t.lastNegativeDistance.toFixed(1);
+        renderConfirmation(selectedConfirmation, t.result, t.reason.toUpperCase());
+      }
+
+      function renderStatusList() {
+        statusList.innerHTML = '';
+        state.targets.forEach((t, idx) => {
+          const row = document.createElement('div');
+          row.className = 'status-item';
+          const left = document.createElement('div');
+          left.innerHTML = `<strong>${idx + 1}. ${escapeHtml(t.name)}</strong><div class="muted">RGB avg: ${t.lastAvgColor.r}, ${t.lastAvgColor.g}, ${t.lastAvgColor.b}</div>`;
+          const right = document.createElement('div');
+          right.className = t.result === 'pass' ? 'good-text' : t.result === 'fail' ? 'bad-text' : 'muted';
+          right.textContent = t.enabled ? t.reason : 'Disabled';
+          row.append(left, right);
+          statusList.appendChild(row);
+        });
+      }
+
+      function escapeHtml(str) {
+        return String(str).replace(/[&<>\"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+      }
+
+      function renderConfirmation(el, stateName, text) {
+        el.className = 'confirmation-box ' + (stateName === 'pass' ? 'good' : stateName === 'fail' ? 'bad' : 'neutral');
+        el.textContent = text;
+      }
+
+      function renderGlobalStatus() {
+        const selectedTarget = state.targets[state.selectedTargetIndex] || state.targets[0];
+
+        if (!selectedTarget) {
+          overallStatus.textContent = 'Overall: no targets';
+          renderConfirmation(globalConfirmation, 'waiting', 'NO TARGET SELECTED');
+          return;
+        }
+
+        overallStatus.textContent = selectedTarget.enabled
+          ? ('Overall: ' + (selectedTarget.result || 'waiting').toUpperCase())
+          : 'Overall: disabled';
+
+        if (!selectedTarget.enabled) {
+          renderConfirmation(globalConfirmation, 'waiting', 'DISABLED');
+          return;
+        }
+
+        renderConfirmation(
+          globalConfirmation,
+          selectedTarget.result || 'waiting',
+          (selectedTarget.reason || 'WAITING').toUpperCase()
+        );
+      }
+
+
+      function syncPanelHeights() {
+        const viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+        const shellWidth = Math.max(0, Math.floor((document.querySelector('.app-shell')?.clientWidth || viewportWidth)));
+        const aspect = (state.videoWidth > 0 && state.videoHeight > 0) ? (state.videoWidth / state.videoHeight) : (16 / 9);
+
+        if (document.body.classList.contains('viewer-mode')) {
+          const horizontalPadding = 16;
+          const targetStageWidth = Math.max(320, Math.floor(viewportWidth - horizontalPadding));
+          const targetStageHeight = Math.max(180, Math.round(targetStageWidth / aspect));
+          videoStage.style.width = `${targetStageWidth}px`;
+          videoStage.style.height = `${targetStageHeight}px`;
+          if (videoPanel) {
+            videoPanel.style.width = `${targetStageWidth}px`;
+            videoPanel.style.maxWidth = 'none';
+          }
+          updateVideoFitLayout();
+          return;
+        }
+
+        const targetStageWidth = Math.max(320, Math.floor(Math.min(viewportWidth * 0.5, shellWidth * 0.5)));
+        const targetStageHeight = Math.max(180, Math.round(targetStageWidth / aspect));
+
+        videoStage.style.width = `${targetStageWidth}px`;
+        videoStage.style.height = `${targetStageHeight}px`;
+        if (videoPanel) videoPanel.style.width = `${targetStageWidth}px`;
+        updateVideoFitLayout();
+      }
+
+      function renderZoom() {
+        zoomLabel.textContent = `${state.zoom.toFixed(2)}x`;
+        zoomRange.value = state.zoom;
+        videoInner.style.transform = `scale(${state.zoom})`;
+        updateVideoFitLayout();
+      }
+
+      function renderOverlay() {
+        overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
+        overlayCtx.lineWidth = 2;
+        overlayCtx.font = '12px Arial';
+        overlayCtx.textBaseline = 'bottom';
+        state.targets.forEach((t, idx) => {
+          ensureBounds(t);
+          const color = !t.enabled ? 'rgba(180,180,180,0.55)' : t.result === 'pass' ? 'rgba(0,210,106,0.95)' : t.result === 'fail' ? 'rgba(255,74,95,0.95)' : 'rgba(255,190,77,0.95)';
+          const { cx, cy } = getTargetCenter(t);
+          const rad = normalizeRotation(t.rotation) * Math.PI / 180;
+
+          overlayCtx.save();
+          overlayCtx.translate(cx, cy);
+          overlayCtx.rotate(rad);
+          overlayCtx.strokeStyle = color;
+          overlayCtx.fillStyle = color.replace('0.95', '0.14').replace('0.55', '0.10');
+
+          const shape = t.shape || 'rect';
+          if (shape === 'rect') {
+            overlayCtx.fillRect(-t.w / 2, -t.h / 2, t.w, t.h);
+            overlayCtx.strokeRect(-t.w / 2 + 0.5, -t.h / 2 + 0.5, t.w, t.h);
+          } else if (shape === 'ellipse') {
+            overlayCtx.beginPath();
+            overlayCtx.ellipse(0, 0, t.w / 2, t.h / 2, 0, 0, Math.PI * 2);
+            overlayCtx.fill();
+            overlayCtx.stroke();
+          } else {
+            const thickness = Math.max(1, Math.min(Number(t.cylinderThickness || 10), Math.floor(Math.min(t.w, t.h) / 2)));
+            overlayCtx.beginPath();
+            overlayCtx.ellipse(0, 0, t.w / 2, t.h / 2, 0, 0, Math.PI * 2);
+            overlayCtx.ellipse(0, 0, Math.max(0.5, t.w / 2 - thickness), Math.max(0.5, t.h / 2 - thickness), 0, 0, Math.PI * 2, true);
+            overlayCtx.fill('evenodd');
+            overlayCtx.stroke();
+            overlayCtx.beginPath();
+            overlayCtx.ellipse(0, 0, Math.max(0.5, t.w / 2 - thickness), Math.max(0.5, t.h / 2 - thickness), 0, 0, Math.PI * 2);
+            overlayCtx.stroke();
+          }
+
+          if (idx === state.selectedTargetIndex) {
+            overlayCtx.strokeStyle = 'rgba(255,255,255,0.95)';
+            overlayCtx.setLineDash([5,4]);
+            if (shape === 'rect') {
+              overlayCtx.strokeRect(-t.w / 2 - 2.5, -t.h / 2 - 2.5, t.w + 4, t.h + 4);
+            } else {
+              overlayCtx.beginPath();
+              overlayCtx.ellipse(0, 0, t.w / 2 + 2.5, t.h / 2 + 2.5, 0, 0, Math.PI * 2);
+              overlayCtx.stroke();
+            }
+            overlayCtx.setLineDash([]);
+          }
+          overlayCtx.restore();
+
+          if (t.showLabel) {
+            const label = `${t.name}: ${t.enabled ? t.reason : 'Disabled'}`;
+            const metrics = overlayCtx.measureText(label);
+            const tw = metrics.width + 10;
+            const bounds = getRotatedBounds(t);
+            const tx = clamp(bounds.minX, 0, overlay.width - tw);
+            const ty = Math.max(18, bounds.minY - 6);
+            overlayCtx.fillStyle = 'rgba(5,10,18,0.88)';
+            overlayCtx.fillRect(tx, ty - 16, tw, 18);
+            overlayCtx.strokeStyle = color;
+            overlayCtx.strokeRect(tx, ty - 16, tw, 18);
+            overlayCtx.fillStyle = '#eaf7ff';
+            overlayCtx.fillText(label, tx + 5, ty - 3);
+          }
+        });
+      }
+
+      function render() {
+        renderTabs();
+        renderTargetFields();
+        renderStatusList();
+        renderGlobalStatus();
+        renderZoom();
+        renderOverlay();
+        syncPanelHeights();
+        setConfigLocked(configLocked);
+        saveConfigToStorage();
+      }
+
+      function updateTargetFromInputs() {
+        if (configLocked) return;
+        const t = getSelectedTarget();
+        if (!t) return;
+        t.name = inputs.targetName.value || `Target ${state.selectedTargetIndex + 1}`;
+        t.enabled = inputs.targetEnabled.checked;
+        t.showLabel = inputs.showLabel.checked;
+        t.x = Number(inputs.xRange.value);
+        t.y = Number(inputs.yRange.value);
+        t.w = Number(inputs.wRange.value);
+        t.h = Number(inputs.hRange.value);
+        t.rotation = Number(inputs.rotationRange.value);
+        t.shape = inputs.shapeMode.value;
+        inputs.cylinderThicknessRange.max = String(Math.max(1, Math.floor(Math.min(t.w, t.h) / 2)));
+        t.cylinderThickness = Math.min(Number(inputs.cylinderThicknessRange.value), Math.max(1, Math.floor(Math.min(t.w, t.h) / 2)));
+        t.positiveEnabled = inputs.positiveEnabled.checked;
+        t.positiveAlarm = inputs.positiveAlarm.checked;
+        t.disableAlarmAfterPositiveConfirmed = inputs.disableAlarmAfterPositiveConfirmed.checked;
+        t.positiveColor = inputs.positiveColor.value;
+        t.positiveTolerance = Number(inputs.positiveTolerance.value);
+        t.negativeEnabled = inputs.negativeEnabled.checked;
+        t.negativeAlarm = inputs.negativeAlarm.checked;
+        t.enableAlarmAfterNegativeDetected = inputs.enableAlarmAfterNegativeDetected.checked;
+        t.negativeColor = inputs.negativeColor.value;
+        t.negativeTolerance = Number(inputs.negativeTolerance.value);
+        ensureBounds(t);
+        render();
+      }
+
+      function resetSelectedTarget() {
+        if (configLocked) return;
+        const idx = state.selectedTargetIndex;
+        state.targets[idx] = { ...defaultTarget(idx + 1), id: state.targets[idx].id };
+        state.positiveAlarmSystemArmed = true;
+        resetDisableAchievements();
+        resetEnableAchievements();
+        render();
+      }
+
+      async function startCamera() {
+        try {
+          stopCamera();
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'environment' },
+            audio: false
+          });
+          video.srcObject = stream;
+          await video.play();
+          applyVideoDimensions(video.videoWidth || 640, video.videoHeight || 480);
+          cameraStatus.textContent = `Camera: ${state.videoWidth} × ${state.videoHeight}`;
+          render();
+          loop();
+        } catch (err) {
+          cameraStatus.textContent = 'Camera: error starting';
+          alert('Camera access failed. Open the file from a secure context or serve it through a local web server, then allow camera access.\n\nError: ' + err.message);
+        }
+      }
+
+      function stopCamera() {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+          stream = null;
+        }
+        video.srcObject = null;
+      }
+
+
+      function normalizeRotation(rotation) {
+        let v = Number(rotation || 0) % 360;
+        if (v < 0) v += 360;
+        return v;
+      }
+
+      function getTargetCenter(target) {
+        return {
+          cx: target.x + target.w / 2,
+          cy: target.y + target.h / 2
+        };
+      }
+
+      function getRotatedCorners(target) {
+        const { cx, cy } = getTargetCenter(target);
+        const rad = normalizeRotation(target.rotation) * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        const hw = target.w / 2;
+        const hh = target.h / 2;
+        const pts = [
+          { x: -hw, y: -hh },
+          { x: hw, y: -hh },
+          { x: hw, y: hh },
+          { x: -hw, y: hh }
+        ];
+        return pts.map(p => ({
+          x: cx + p.x * cos - p.y * sin,
+          y: cy + p.x * sin + p.y * cos
+        }));
+      }
+
+      function getRotatedBounds(target) {
+        const corners = getRotatedCorners(target);
+        const xs = corners.map(p => p.x);
+        const ys = corners.map(p => p.y);
+        return {
+          minX: Math.floor(Math.min(...xs)),
+          maxX: Math.ceil(Math.max(...xs)),
+          minY: Math.floor(Math.min(...ys)),
+          maxY: Math.ceil(Math.max(...ys))
+        };
+      }
+
+      function pointInTarget(px, py, target) {
+        const { cx, cy } = getTargetCenter(target);
+        const rad = -normalizeRotation(target.rotation) * Math.PI / 180;
+        const dx = px - cx;
+        const dy = py - cy;
+        const rx = dx * Math.cos(rad) - dy * Math.sin(rad);
+        const ry = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+        if ((target.shape || 'rect') === 'rect') {
+          return Math.abs(rx) <= target.w / 2 && Math.abs(ry) <= target.h / 2;
+        }
+
+        const a = Math.max(0.5, target.w / 2);
+        const b = Math.max(0.5, target.h / 2);
+        const outer = (rx * rx) / (a * a) + (ry * ry) / (b * b);
+
+        if ((target.shape || 'rect') === 'ellipse') {
+          return outer <= 1;
+        }
+
+        const thickness = Math.max(1, Math.min(Number(target.cylinderThickness || 10), Math.min(a, b)));
+        const innerA = Math.max(0.5, a - thickness);
+        const innerB = Math.max(0.5, b - thickness);
+        const inner = (rx * rx) / (innerA * innerA) + (ry * ry) / (innerB * innerB);
+
+        return outer <= 1 && inner >= 1;
+      }
+
+      function sampleAreaColor(target) {
+        if (!video.videoWidth || !video.videoHeight) return { r: 0, g: 0, b: 0 };
+        processingCtx.drawImage(video, 0, 0, processing.width, processing.height);
+
+        const bounds = getRotatedBounds(target);
+        const sx = clamp(bounds.minX, 0, processing.width - 1);
+        const sy = clamp(bounds.minY, 0, processing.height - 1);
+        const ex = clamp(bounds.maxX, 0, processing.width);
+        const ey = clamp(bounds.maxY, 0, processing.height);
+        const sw = Math.max(1, ex - sx);
+        const sh = Math.max(1, ey - sy);
+
+        const img = processingCtx.getImageData(sx, sy, sw, sh).data;
+        let r = 0, g = 0, b = 0, count = 0;
+
+        for (let yy = 0; yy < sh; yy++) {
+          for (let xx = 0; xx < sw; xx++) {
+            const px = sx + xx + 0.5;
+            const py = sy + yy + 0.5;
+            if (!pointInTarget(px, py, target)) continue;
+            const i = (yy * sw + xx) * 4;
+            r += img[i];
+            g += img[i + 1];
+            b += img[i + 2];
+            count += 1;
+          }
+        }
+
+        if (!count) return { r: 0, g: 0, b: 0 };
+        return { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) };
+      }
+
+      
+      function allDisableTargetsSatisfied() {
+        const relevant = state.targets.filter(t => t.enabled && t.disableAlarmAfterPositiveConfirmed);
+        if (!relevant.length) return false;
+        return relevant.every(t => !!t.positiveDisableAchieved);
+      }
+
+      function allEnableTargetsSatisfied() {
+        const relevant = state.targets.filter(t => t.enabled && t.enableAlarmAfterNegativeDetected);
+        if (!relevant.length) return false;
+        return relevant.every(t => !!t.negativeEnableAchieved);
+      }
+
+      function resetDisableAchievements() {
+        state.targets.forEach(t => { t.positiveDisableAchieved = false; });
+      }
+
+      function resetEnableAchievements() {
+        state.targets.forEach(t => { t.negativeEnableAchieved = false; });
+      }
+
+function evaluateTarget(target) {
+        if (!video.videoWidth || !video.videoHeight) {
+          target.result = 'waiting';
+          target.reason = 'Waiting for camera';
+          return;
+        }
+        if (!target.enabled) {
+          target.result = 'waiting';
+          target.reason = 'Disabled';
+          return;
+        }
+        ensureBounds(target);
+        const avg = sampleAreaColor(target);
+        target.lastAvgColor = avg;
+        const positiveRgb = hexToRgb(target.positiveColor);
+        const negativeRgb = hexToRgb(target.negativeColor);
+        const posDist = distance(avg, positiveRgb);
+        const negDist = distance(avg, negativeRgb);
+        target.lastPositiveDistance = posDist;
+        target.lastNegativeDistance = negDist;
+
+        let positivePass = true;
+        let negativeHit = false;
+        if (target.positiveEnabled) positivePass = posDist <= target.positiveTolerance;
+        if (target.negativeEnabled) negativeHit = negDist <= target.negativeTolerance;
+
+        if (target.negativeEnabled && negativeHit) {
+          target.result = 'fail';
+          target.reason = 'Negative detected';
+
+          if (target.enableAlarmAfterNegativeDetected) {
+            target.negativeEnableAchieved = true;
+            if (allEnableTargetsSatisfied()) {
+              state.positiveAlarmSystemArmed = true;
+              resetEnableAchievements();
+            }
+          }
+
+          if (target.negativeAlarm) beep();
+
+        } else if (target.positiveEnabled && positivePass) {
+          target.result = 'pass';
+          target.reason = 'Positive confirmed';
+
+          if (target.disableAlarmAfterPositiveConfirmed) {
+            target.positiveDisableAchieved = true;
+            if (allDisableTargetsSatisfied()) {
+              state.positiveAlarmSystemArmed = false;
+              resetDisableAchievements();
+            }
+          }
+
+        } else if (target.positiveEnabled && !positivePass) {
+          target.result = 'fail';
+          target.reason = 'Positive missing';
+
+          if (target.positiveAlarm && state.positiveAlarmSystemArmed !== false) beep();
+
+        } else if (!target.positiveEnabled && target.negativeEnabled && !negativeHit) {
+          target.result = 'pass';
+          target.reason = 'Negative clear';
+        } else {
+          target.result = 'waiting';
+          target.reason = 'No rule enabled';
+        }
+      }
+
+      let lastInspectionTime = 0;
+
+      function loop(now = 0) {
+        if (!video.videoWidth || !video.videoHeight) {
+          rafId = requestAnimationFrame(loop);
+          return;
+        }
+        if (!lastInspectionTime || (now - lastInspectionTime) >= INSPECTION_INTERVAL_MS) {
+          lastInspectionTime = now;
+          state.targets.forEach(evaluateTarget);
+          renderOverlay();
+          renderStatusList();
+          renderGlobalStatus();
+          const selected = getSelectedTarget();
+          if (selected) {
+            inputs.positiveDistanceLabel.textContent = selected.lastPositiveDistance == null ? '—' : selected.lastPositiveDistance.toFixed(1);
+            inputs.negativeDistanceLabel.textContent = selected.lastNegativeDistance == null ? '—' : selected.lastNegativeDistance.toFixed(1);
+            renderConfirmation(selectedConfirmation, selected.result, selected.reason.toUpperCase());
+          }
+        }
+        rafId = requestAnimationFrame(loop);
+      }
+
+      function beep() {
+        const now = performance.now();
+        if (now - lastBeepAt < 650) return;
+        lastBeepAt = now;
+        try {
+          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = 'square';
+          o.frequency.value = 880;
+          g.gain.value = 0.0001;
+          o.connect(g);
+          g.connect(audioCtx.destination);
+          const t = audioCtx.currentTime;
+          g.gain.exponentialRampToValueAtTime(0.08, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+          o.start(t);
+          o.stop(t + 0.2);
+        } catch (err) {
+          console.warn('Audio beep blocked', err);
+        }
+      }
+
+      function addTarget() {
+        if (configLocked) return;
+        if (state.targets.length >= MAX_TARGETS) {
+          alert('Maximum of 100 targets reached.');
+          return;
+        }
+        state.targets.push(defaultTarget(state.targets.length + 1));
+        state.selectedTargetIndex = state.targets.length - 1;
+        render();
+      }
+
+      function removeTarget() {
+        if (configLocked) return;
+        if (state.targets.length <= 1) {
+          alert('At least one target must remain.');
+          return;
+        }
+        state.targets.splice(state.selectedTargetIndex, 1);
+        state.selectedTargetIndex = clamp(state.selectedTargetIndex, 0, state.targets.length - 1);
+        render();
+      }
+
+      function saveConfigToFile() {
+        const out = JSON.stringify({
+          ...state,
+          savedAt: new Date().toISOString(),
+          targets: state.targets.map(t => ({ ...t }))
+        }, null, 2);
+        const blob = new Blob([out], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'target-ace-config.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      function loadConfigFromFile(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const incoming = JSON.parse(reader.result);
+            if (!incoming.targets || !Array.isArray(incoming.targets) || !incoming.targets.length) throw new Error('No targets found');
+            state = {
+              version: 2.2,
+              zoom: clamp(Number(incoming.zoom || 1), 1, 4),
+              videoWidth: Number(incoming.videoWidth || 640),
+              videoHeight: Number(incoming.videoHeight || 480),
+              selectedTargetIndex: clamp(Number(incoming.selectedTargetIndex || 0), 0, incoming.targets.length - 1),
+              positiveAlarmSystemArmed: incoming.positiveAlarmSystemArmed !== false,
+              targets: incoming.targets.slice(0, MAX_TARGETS).map((t, i) => ({ ...defaultTarget(i + 1), ...t }))
+            };
+            applyVideoDimensions(state.videoWidth, state.videoHeight);
+            render();
+          } catch (err) {
+            alert('Could not load configuration: ' + err.message);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      function openViewerWindow() {
+        const url = new URL(location.href);
+        url.searchParams.set('viewer', '1');
+        window.open(url.toString(), '_blank', 'noopener,noreferrer,width=1200,height=900');
+      }
+
+      function setPin() {
+        const pin = prompt('Enter a new numeric PIN for config lock (4 to 12 digits).');
+        if (!pin) return;
+        if (!/^\d{4,12}$/.test(pin)) {
+          alert('PIN must be 4 to 12 digits.');
+          return;
+        }
+        setLockRecord({ hash: hashPin(pin) });
+        alert('PIN saved. Use Lock Config to lock the configuration.');
+      }
+
+      function lockConfig() {
+        const record = getLockRecord();
+        if (!record?.hash) {
+          alert('Set a PIN first.');
+          return;
+        }
+        setConfigLocked(true);
+      }
+
+      function unlockConfig() {
+        const record = getLockRecord();
+        if (!record?.hash) {
+          setConfigLocked(false);
+          return;
+        }
+        const pin = prompt('Enter PIN to unlock the configuration.');
+        if (pin == null) return;
+        if (hashPin(pin) === record.hash) {
+          setConfigLocked(false);
+        } else {
+          alert('Incorrect PIN.');
+        }
+      }
+
+      function bindInput(el, event = 'input') { el.addEventListener(event, updateTargetFromInputs); }
+      [
+        inputs.targetName, inputs.targetEnabled, inputs.showLabel, inputs.xRange, inputs.yRange,
+        inputs.wRange, inputs.hRange, inputs.rotationRange, inputs.shapeMode, inputs.cylinderThicknessRange, inputs.positiveEnabled, inputs.positiveAlarm,
+        inputs.disableAlarmAfterPositiveConfirmed,
+        inputs.positiveColor, inputs.positiveTolerance, inputs.negativeEnabled,
+        inputs.negativeAlarm, inputs.enableAlarmAfterNegativeDetected,
+        inputs.negativeColor, inputs.negativeTolerance
+      ].forEach(el => bindInput(el, el.type === 'checkbox' ? 'change' : 'input'));
+
+      inputs.targetName.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+      });
+      inputs.targetName.addEventListener('blur', () => {
+        const t = getSelectedTarget();
+        if (!t) return;
+        const cleaned = inputs.targetName.value.trim();
+        t.name = cleaned || `Target ${state.selectedTargetIndex + 1}`;
+        inputs.targetName.value = t.name;
+        render();
+      });
+
+      zoomRange.addEventListener('input', () => {
+        state.zoom = clamp(Number(zoomRange.value), 1, 4);
+        renderZoom();
+        saveConfigToStorage();
+      });
+
+      buttons.startCameraBtn.addEventListener('click', startCamera);
+      buttons.stopCameraBtn.addEventListener('click', stopCamera);
+      buttons.addTargetBtn.addEventListener('click', addTarget);
+      buttons.removeTargetBtn.addEventListener('click', removeTarget);
+      buttons.addTargetBtnSidebar?.addEventListener('click', addTarget);
+      buttons.removeTargetBtnSidebar?.addEventListener('click', removeTarget);
+      buttons.resetTargetBtn.addEventListener('click', resetSelectedTarget);
+      buttons.saveConfigBtn.addEventListener('click', saveConfigToFile);
+      buttons.loadConfigBtn.addEventListener('click', () => buttons.loadConfigInput.click());
+      buttons.loadConfigInput.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) loadConfigFromFile(file);
+        e.target.value = '';
+      });
+      buttons.samplePositiveBtn.addEventListener('click', () => {
+        const t = getSelectedTarget();
+        t.positiveColor = rgbToHex(sampleAreaColor(t));
+        render();
+      });
+      buttons.sampleNegativeBtn.addEventListener('click', () => {
+        const t = getSelectedTarget();
+        t.negativeColor = rgbToHex(sampleAreaColor(t));
+        render();
+      });
+      buttons.openViewerBtn.addEventListener('click', openViewerWindow);
+      buttons.setPinBtn.addEventListener('click', setPin);
+      buttons.lockConfigBtn.addEventListener('click', lockConfig);
+      buttons.unlockConfigBtn.addEventListener('click', unlockConfig);
+      window.addEventListener('resize', syncPanelHeights);
+
+      window.addEventListener('beforeunload', stopCamera);
+
+      applyVideoDimensions(state.videoWidth, state.videoHeight);
+      render();
+
+      if (isViewerMode) {
+        document.querySelectorAll('.config-hide').forEach(el => el.style.display = 'none');
+        document.getElementById('startCameraBtn').textContent = 'Start Viewer Camera';
+        document.getElementById('openViewerBtn').style.display = 'none';
+      }
+    })();
+  </script>
+
+<script>
+window.addEventListener('load', () => {
+  const vp = document.getElementById('videoViewport');
+  const stage = document.getElementById('videoStage');
+  if (vp && stage && !document.body.classList.contains('viewer-mode')) {
+    const syncPreviewContainment = () => {
+      vp.style.width = stage.clientWidth + 'px';
+      vp.style.height = stage.clientHeight + 'px';
+    };
+    syncPreviewContainment();
+    window.addEventListener('resize', syncPreviewContainment);
+    document.addEventListener('click', () => setTimeout(syncPreviewContainment, 0));
+  }
+});
+
+    function updateGlobalConfirmationStatus() {
+  const globalPositiveBar = document.getElementById('globalPositiveStatus');
+  const globalNegativeBar = document.getElementById('globalNegativeStatus');
+  const globalPositiveText = document.getElementById('globalPositiveStatusText');
+  const globalNegativeText = document.getElementById('globalNegativeStatusText');
+
+  const selectedTarget = targets[selectedTargetIndex];
+
+  if (!selectedTarget) {
+    if (globalPositiveBar) globalPositiveBar.className = 'status-fill neutral';
+    if (globalNegativeBar) globalNegativeBar.className = 'status-fill neutral';
+    if (globalPositiveText) globalPositiveText.textContent = 'DISABLED';
+    if (globalNegativeText) globalNegativeText.textContent = 'DISABLED';
+    return;
+  }
+
+  const posEnabled = !!selectedTarget.positiveEnabled;
+  const negEnabled = !!selectedTarget.negativeEnabled;
+  const posMatch = !!selectedTarget.positiveMatch;
+  const negMatch = !!selectedTarget.negativeMatch;
+
+  const posState = posEnabled ? (posMatch ? 'pass' : 'fail') : 'neutral';
+  const negState = negEnabled ? (negMatch ? 'pass' : 'fail') : 'neutral';
+
+  const posText = posEnabled
+    ? (posMatch ? 'POSITIVE CONFIRMED' : 'POSITIVE MISSING')
+    : 'DISABLED';
+
+  const negText = negEnabled
+    ? (negMatch ? 'NEGATIVE DETECTED' : 'NEGATIVE MISSING')
+    : 'DISABLED';
+
+  if (globalPositiveBar) globalPositiveBar.className = 'status-fill ' + posState;
+  if (globalNegativeBar) globalNegativeBar.className = 'status-fill ' + negState;
+  if (globalPositiveText) globalPositiveText.textContent = posText;
+  if (globalNegativeText) globalNegativeText.textContent = negText;
+}
+
+      const positiveEnabled = !!selectedTarget.positiveEnabled;
+      const negativeEnabled = !!selectedTarget.negativeEnabled;
+      const positivePassed = !!selectedTarget.positiveMatch;
+      const negativePassed = !!selectedTarget.negativeMatch;
+
+      if (globalPositiveBar) globalPositiveBar.className = 'status-fill ' + (positiveEnabled ? (positivePassed ? 'pass' : 'fail') : 'neutral');
+      if (globalNegativeBar) globalNegativeBar.className = 'status-fill ' + (negativeEnabled ? (negativePassed ? 'pass' : 'fail') : 'neutral');
+      if (globalPositiveText) globalPositiveText.textContent = positiveEnabled ? (positivePassed ? 'PASS' : 'FAIL') : 'Disabled';
+      if (globalNegativeText) globalNegativeText.textContent = negativeEnabled ? (negativePassed ? 'PASS' : 'FAIL') : 'Disabled';
+    }
+
+</script>
+
+
+
+
+
+
+<!-- IDEAorDIE Floating External Link Panel -->
+<style>
+.ideaordie-panel {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  padding: 8px 14px;
+  border-radius: 999px;
+
+  background: linear-gradient(180deg, rgba(8,8,8,0.98), rgba(0,0,0,0.98));
+  border: 1px solid rgba(255,255,255,0.18);
+
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.05) inset,
+    0 0 18px rgba(255,255,255,0.08);
+
+  backdrop-filter: blur(8px);
+}
+
+.ideaordie-panel a {
+  text-decoration: none;
+  color: #fff;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+
+  padding: 6px 10px;
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+
+  transition: all 0.2s ease;
+}
+
+.ideaordie-panel a:hover {
+  background: rgba(255,255,255,0.18);
+  transform: translateY(-1px);
+}
+
+.ideaordie-panel a:active {
+  transform: translateY(2px);
+}
+</style>
+
+<div class="ideaordie-panel">
+  <a href="https://ideaordie.com" target="_blank">IDEAORDIE</a>
+  <a href="https://x.com/ideaordie" target="_blank">𝕏</a>
+</div>
+
+</body>
+</html>
